@@ -11,4 +11,5 @@ crate-type = ["cdylib"]
 [dependencies]
 pyo3 = "0.22.0"
 reqwest = { git = "https://github.com/audunhalland/reqwest.git", branch = "pyodide", default-features = false, features = ["pyodide"] }
+pyo3-async-runtimes = { git = "https://github.com/audunhalland/pyo3-async-runtimes.git", branch = "pyodide", features = ["tokio-runtime"] }
 tokio = { version = "1", features = ["rt"] }

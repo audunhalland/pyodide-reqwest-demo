@@ -481,6 +481,7 @@ name = "pyodide-reqwest-demo"
 version = "0.1.0"
 dependencies = [
  "pyo3",
+ "pyo3-async-runtimes",
  "reqwest",
  "tokio",
 ]
@@ -497,7 +498,7 @@ dependencies = [
 [[package]]
 name = "reqwest"
 version = "0.12.8"
-source = "git+https://github.com/audunhalland/reqwest.git?branch=pyodide#23144b2b2b8acd6342492eb6dee1fe033560a372"
+source = "git+https://github.com/audunhalland/reqwest.git?branch=pyodide#8de2ebc1b6168dcc9e5faba9b6215e80be0db895"
 dependencies = [
  "base64",
  "bytes",

@@ -10,6 +10,7 @@ use reqwest::{
 #[pymodule]
 fn pyodide_reqwest_demo(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(http_get, m)?)?;
+    m.add_function(wrap_pyfunction!(http_get_async, m)?)?;
     Ok(())
 }
 
@@ -21,15 +22,50 @@ fn http_get(
     headers: Option<BTreeMap<String, String>>,
     body: Option<Vec<u8>>,
     py: Python,
-) -> PyResult<ReqwestResponse> {
+) -> PyResult<Py<ReqwestResponse>> {
     let builder = setup_request(headers, body, reqwest::Client::new().get(url));
 
-    let runtime = tokio::runtime::Builder::new_current_thread()
-        .build()
-        .unwrap();
-    let reqwest_response = py.allow_threads(|| runtime.block_on(get_response(builder)))?;
+    let reqwest_response = if false {
+        // let runtime = tokio::runtime::Builder::new_current_thread()
+        //     .build()
+        //     .unwrap();
+        // py.allow_threads(|| runtime.block_on(get_response(builder)))?
+
+        panic!()
+    } else {
+        let ffi = PyModule::import_bound(py, "pyodide.ffi")?;
+        let run_sync = ffi.getattr("run_sync")?;
+
+        let fut = get_response(builder);
+        let coroutine = pyo3_async_runtimes::tokio::future_into_py(py, fut)?;
+
+        let py_rr = run_sync.call1((coroutine,))?;
+
+        let reqwest_response: Bound<ReqwestResponse> = py_rr
+            .downcast_into()
+            .map_err(|_| PyRuntimeError::new_err("downcast failed"))?;
+
+        reqwest_response.unbind()
+    };
 
     Ok(reqwest_response)
+}
+
+#[pyfunction]
+#[pyo3(signature = (url, headers = None, body = None))]
+fn http_get_async(
+    url: String,
+    headers: Option<BTreeMap<String, String>>,
+    body: Option<Vec<u8>>,
+    py: Python,
+) -> PyResult<PyObject> {
+    println!("http get async");
+
+    let builder = setup_request(headers, body, reqwest::Client::new().get(url));
+    let response_future = get_response(builder);
+
+    let coroutine = pyo3_async_runtimes::tokio::future_into_py(py, response_future)?;
+    Ok(coroutine.unbind())
 }
 
 /// A reqwest HTTP response
